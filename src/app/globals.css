@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+/* Hemera's tokens: almost everything grey, one orange. Light or dark like the system. */
+:root {
+  --bg: #fafaf9;
+  --surface: #ffffff;
+  --text: #161615;
+  --text-2: #6b6a65;
+  --text-3: #9b9a94;
+  --line: rgb(22 22 21 / 0.08);
+  --signal: #ff5a1f;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161615;
+    --surface: #1c1c1b;
+    --text: #ecebe6;
+    --text-2: #a3a29c;
+    --text-3: #6f6e69;
+    --line: rgb(236 235 230 / 0.08);
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-fg: var(--text);
+  --color-fg-2: var(--text-2);
+  --color-fg-3: var(--text-3);
+  --color-line: var(--line);
+  --color-signal: var(--signal);
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.55;
+  letter-spacing: -0.011em;
+  font-feature-settings: "cv01", "ss03";
+}
+::selection {
+  background: color-mix(in oklab, var(--signal) 28%, transparent);
+}
