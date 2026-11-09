@@ -1,0 +1,12 @@
+{
+  "worldsTried": 600,
+  "worldsKept": 182,
+  "survivalShare": {
+    "asHappened": 0,
+    "noReserve": 0,
+    "fastReserve": 0.24725274725274726,
+    "earlyProposal": 0.03296703296703297,
+    "noAnchor": 1,
+    "fullyBacked": 1
+  }
+}
