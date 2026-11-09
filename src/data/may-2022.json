@@ -1,0 +1,65 @@
+{
+  "sources": {
+    "prices": "https://coins.llama.fi/chart/coingecko:terrausd",
+    "supply": "https://stablecoins.llama.fi/stablecoin/3"
+  },
+  "note": "Daily snapshots near 00:00 UTC. Supply is DefiLlama's total until 11 May, then the Terra chain's own series, so the two halves are not strictly comparable.",
+  "days": [
+    {
+      "date": "2022-05-07",
+      "day": 0,
+      "ustPrice": 0.9998,
+      "lunaPrice": 78.55,
+      "ustSupply": 18770471902
+    },
+    {
+      "date": "2022-05-08",
+      "day": 1,
+      "ustPrice": 0.9961,
+      "lunaPrice": 64.88,
+      "ustSupply": 18708520935
+    },
+    {
+      "date": "2022-05-09",
+      "day": 2,
+      "ustPrice": 0.9963,
+      "lunaPrice": 65.1,
+      "ustSupply": 18635285318
+    },
+    {
+      "date": "2022-05-10",
+      "day": 3,
+      "ustPrice": 0.8861,
+      "lunaPrice": 41.28,
+      "ustSupply": 15682326993
+    },
+    {
+      "date": "2022-05-11",
+      "day": 4,
+      "ustPrice": 0.6978,
+      "lunaPrice": 15.55,
+      "ustSupply": 13692512964
+    },
+    {
+      "date": "2022-05-12",
+      "day": 5,
+      "ustPrice": 0.7481,
+      "lunaPrice": 1.118,
+      "ustSupply": 13121015047
+    },
+    {
+      "date": "2022-05-13",
+      "day": 6,
+      "ustPrice": 0.4569,
+      "lunaPrice": 0.002864,
+      "ustSupply": 10121015047
+    },
+    {
+      "date": "2022-05-14",
+      "day": 7,
+      "ustPrice": 0.1315,
+      "lunaPrice": 0.000109,
+      "ustSupply": 10012019284
+    }
+  ]
+}
