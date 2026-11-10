@@ -2,10 +2,12 @@
 
 import type { DayResult } from "@/engine/game";
 import type { Point } from "@/engine/simulate";
-import { money, percent } from "./format";
+import { money, percent, price } from "./format";
 
 /** Under this, the UST waiting for a buyer is not worth mentioning. */
 const NOTABLE_QUEUE = 1e6;
+/** Under this, UST's price has not really moved in a day. */
+const NOTABLE_MOVE = 0.01;
 
 function growth(open: number, close: number): string {
   const ratio = close / open;
@@ -25,7 +27,12 @@ export function explainDay({ spentUsd, burnedUst }: DayResult, open: Point, clos
     );
     parts.push(`LUNA can now back ${percent(close.lunaMarketCap / close.ustSupply)} of all the UST.`);
   } else if (close.unsoldUst > NOTABLE_QUEUE) {
-    parts.push(`${money(close.unsoldUst)} of UST is looking for a buyer, but the price barely moved, so nobody has a reason to swap it for LUNA yet.`);
+    const moved = Math.abs(close.ustPrice - open.ustPrice) >= NOTABLE_MOVE;
+    parts.push(
+      moved
+        ? `${money(close.unsoldUst)} of UST is looking for a buyer and none of it was swapped for LUNA today. UST went from ${price(open.ustPrice)} to ${price(close.ustPrice)}.`
+        : `${money(close.unsoldUst)} of UST is looking for a buyer, but the price barely moved, so nobody has a reason to swap it for LUNA yet.`,
+    );
   } else if (spentUsd === 0) {
     parts.push("A quiet day: nobody is selling, and the price holds.");
   }

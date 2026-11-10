@@ -26,6 +26,13 @@ describe("what just happened", () => {
     expect(text).toContain("buyer");
   });
 
+  it("does not claim the price barely moved on a day it fell", () => {
+    const text = explainDay(day({}), point({ ustPrice: 0.91 }), point({ ustPrice: 0.58, unsoldUst: 2.1e9 }));
+    expect(text).not.toContain("barely moved");
+    expect(text).toContain("$0.91");
+    expect(text).toContain("$0.58");
+  });
+
   it("explains how burning dilutes LUNA", () => {
     const text = explainDay(day({ burnedUst: 2e9, printedLuna: 30e6 }), point({}), point({ lunaPrice: 60, lunaSupply: 330e6, lunaMarketCap: 19.8e9, ustSupply: 16e9 }));
     expect(text).toContain("10%");
