@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { crashReport, newGame, nextDay, type DayResult } from "@/engine/game";
 import type { Point } from "@/engine/simulate";
-import { coins, held, money, price, supply } from "./format";
+import { coins, held, money, price, ratio, supply } from "./format";
 import { dayLines } from "./log";
 import { shareText, shareUrl } from "./share";
 import { TIMELINE, dayTitle } from "./timeline";
@@ -59,6 +59,17 @@ describe("held", () => {
     [6, "0.3 days"],
   ])("writes %d hours as %s", (hours, text) => {
     expect(held(hours)).toBe(text);
+  });
+});
+
+describe("ratio", () => {
+  it.each([
+    [0.012713, "0.0127"],
+    [3.2149, "3.21"],
+    [980.4, "980"],
+    [1_500_000, "2M"],
+  ])("writes %d as %s", (n, text) => {
+    expect(ratio(n)).toBe(text);
   });
 });
 

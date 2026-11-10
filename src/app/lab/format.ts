@@ -32,3 +32,8 @@ export function held(hours: number): string {
 }
 
 export const percent = (share: number) => `${Math.round(share * 100)}%`;
+
+/** A quantity that may be far under one: 0.0127, 3.2, 980. */
+export function ratio(n: number): string {
+  return n >= 1000 ? coins(n) : String(Number(n.toPrecision(3)));
+}
