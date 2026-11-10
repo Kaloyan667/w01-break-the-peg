@@ -55,7 +55,7 @@ export function Lab({ answer }: { answer: string }) {
 
       <Metrics point={point} committedUsd={game.plan.defendUsd} />
 
-      <section aria-label="Timeline" className="mt-4 grid rounded-xl border border-line bg-surface lg:grid-cols-2">
+      <section aria-label="Timeline" className="mt-4 grid grid-cols-[minmax(0,1fr)] rounded-xl border border-line bg-surface lg:grid-cols-2">
         <Story day={day} point={point} limitUsd={dailyLimitUsd(game.plan.mint)} explanation={explanation} />
         <div className="border-t border-line p-5 lg:border-t-0 lg:border-l">
           <RunChart points={game.points.slice(0, point.hour + 1)} />

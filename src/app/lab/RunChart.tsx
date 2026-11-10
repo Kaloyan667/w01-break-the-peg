@@ -57,7 +57,7 @@ export function RunChart({ points }: { points: Point[] }) {
         </span>
       </div>
 
-      <div ref={box} className="relative">
+      <div ref={box} className="relative overflow-hidden">
         <svg
           role="img"
           aria-label={`UST at ${price(now.usd)} in your game on ${dateAt(now.hour)}. In 2022 it ended the week at ${price(lastReal.usd)}.`}
