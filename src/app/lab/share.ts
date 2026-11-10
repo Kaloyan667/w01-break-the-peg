@@ -2,7 +2,7 @@ import type { CrashReport } from "@/engine/game";
 import { week } from "@/week";
 import { held } from "./format";
 
-const GAME_URL = `${week.url}/lab`;
+const GAME_URL = week.url;
 
 /** The post people send from the crash report. Its figures are the player's own simulated run. */
 export function shareText(report: CrashReport): string {

@@ -139,6 +139,6 @@ describe("sharing on X", () => {
     const url = new URL(shareUrl(report));
     expect(url.hostname).toBe("x.com");
     expect(url.searchParams.get("text")).toBe(shareText(report));
-    expect(url.searchParams.get("url")).toBe("https://w01.hemera.one/lab");
+    expect(url.searchParams.get("url")).toBe("https://w01.hemera.one");
   });
 });
