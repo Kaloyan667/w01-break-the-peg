@@ -5,9 +5,15 @@ import "./globals.css";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"], axes: ["opsz"] });
 
+const title = `${week.title}: Hemera, week ${week.number}`;
+const shareTitle = "Seven days to save a stablecoin. Can you?";
+
 export const metadata: Metadata = {
-  title: `${week.title}: Hemera, week ${week.number}`,
+  metadataBase: new URL(week.url),
+  title,
   description: week.question,
+  openGraph: { title: shareTitle, description: week.question, url: "/", siteName: "Hemera", type: "website" },
+  twitter: { card: "summary_large_image", title: shareTitle, description: week.question },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
