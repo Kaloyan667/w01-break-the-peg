@@ -185,11 +185,73 @@ export function createWorld({ start, reserve }: Scenario): World {
   };
 }
 
+/** Every intermediate number of one block, for the page that shows the machine at work. */
+export type BlockTrace = {
+  block: number;
+  waveUst: number;
+  unsoldOpen: number;
+  depthUsd: number;
+  priceOpen: number;
+  discount: number;
+  targetPanic: number;
+  panic: number;
+  fearMultiple: number;
+  leftAnchorUst: number;
+  leftWalletsUst: number;
+  priceAfterRun: number;
+  reserveSpentUsd: number;
+  reserveBoughtUst: number;
+  priceAfterReserve: number;
+  burnableUst: number;
+  burnedUst: number;
+  fee: number;
+  printedLuna: number;
+  lunaPriceOpen: number;
+  lunaSoldUsd: number;
+  lunaCapOpen: number;
+  lunaCapClose: number;
+  lunaPriceClose: number;
+  priceClose: number;
+  deltaBeforeRecovery: number;
+  deltaClose: number;
+};
+
+export const emptyTrace = (): BlockTrace => ({
+  block: 0,
+  waveUst: 0,
+  unsoldOpen: 0,
+  depthUsd: 0,
+  priceOpen: 0,
+  discount: 0,
+  targetPanic: 0,
+  panic: 0,
+  fearMultiple: 0,
+  leftAnchorUst: 0,
+  leftWalletsUst: 0,
+  priceAfterRun: 0,
+  reserveSpentUsd: 0,
+  reserveBoughtUst: 0,
+  priceAfterReserve: 0,
+  burnableUst: 0,
+  burnedUst: 0,
+  fee: 0,
+  printedLuna: 0,
+  lunaPriceOpen: 0,
+  lunaSoldUsd: 0,
+  lunaCapOpen: 0,
+  lunaCapClose: 0,
+  lunaPriceClose: 0,
+  priceClose: 0,
+  deltaBeforeRecovery: 0,
+  deltaClose: 0,
+});
+
 /**
  * Runs one block of the chain, changing `world` in place, and adds a point to `points` on the hour.
  * The reserve may spend up to `reserveBudgetUsd` in this block. Returns what it did spend.
+ * Give it a `trace` to read every intermediate number afterwards.
  */
-export function runBlock(world: World, scenario: Scenario, points: Point[], reserveBudgetUsd: number): number {
+export function runBlock(world: World, scenario: Scenario, points: Point[], reserveBudgetUsd: number, trace?: BlockTrace): number {
   const { market, behavior, shocks, reserve, chainHaltDay, hardBackingShare } = scenario;
   const { block } = world;
 
@@ -204,6 +266,10 @@ export function runBlock(world: World, scenario: Scenario, points: Point[], rese
   const depth = () => confidentDepth(behavior, world.lunaPrice * world.lunaSupply, world.ustSupply);
   const quote = () => marketPrice(world.unsold, depth());
   let price = quote();
+  const unsoldOpen = world.unsold;
+  const depthOpen = depth();
+  const priceOpen = price;
+  const lunaPriceOpen = world.lunaPrice;
 
   // A hard-backed share is redeemed at a dollar: the market cannot fall through that floor for it.
   const backed = Math.min(world.unsold * hardBackingShare, world.unsold);
@@ -225,8 +291,10 @@ export function runBlock(world: World, scenario: Scenario, points: Point[], rese
 
   // The reserve buys UST off the market while it has money left.
   price = quote();
+  const priceAfterRun = price;
   const budgetUsd = Math.min(world.reserveUsd, reserveBudgetUsd);
   let spentThisBlock = 0;
+  let boughtThisBlock = 0;
   if (price < reserve.triggerPrice && budgetUsd > 0 && world.unsold > 0) {
     const { boughtUst, spentUsd } = buyUstBack({
       unsold: world.unsold,
@@ -237,14 +305,20 @@ export function runBlock(world: World, scenario: Scenario, points: Point[], rese
     world.reserveUsd -= spentUsd;
     world.unsold -= boughtUst;
     spentThisBlock = spentUsd;
+    boughtThisBlock = boughtUst;
     price = quote();
   }
+  const priceAfterReserve = price;
 
   // Arbitrageurs buy cheap UST, burn it for a dollar of LUNA and sell the LUNA, until the spread
   // eats the discount.
   const chainRunning = chainHaltDay === null || block < chainHaltDay * BLOCKS_PER_DAY;
   const burnable = burnToReachSpread({ delta: world.delta, params: market, targetSpread: 1 - price });
   const burn = chainRunning ? Math.min(burnable, world.unsold) : 0;
+  let fee = 0;
+  let printedLuna = 0;
+  let lunaSoldUsd = 0;
+  let lunaCapClose = lunaMarketCap;
   if (burn > 0) {
     const swap = computeSwap({ delta: world.delta, params: market, offer: "ust", amount: burn, lunaPriceUsd: world.lunaPrice });
     world.delta = swap.delta;
@@ -257,9 +331,46 @@ export function runBlock(world: World, scenario: Scenario, points: Point[], rese
     world.lunaSupply += swap.out;
     world.lunaPrice = Math.max(capAfterSale / world.lunaSupply, LUNA_PRICE_FLOOR);
     price = quote();
+    fee = swap.spread;
+    printedLuna = swap.out;
+    lunaSoldUsd = soldUsd;
+    lunaCapClose = capAfterSale;
   }
 
+  const deltaBeforeRecovery = world.delta;
   world.delta = replenishPool(world.delta, market);
+
+  if (trace) {
+    Object.assign(trace, {
+      block,
+      waveUst: shock,
+      unsoldOpen,
+      depthUsd: depthOpen,
+      priceOpen,
+      discount,
+      targetPanic,
+      panic: world.panic,
+      fearMultiple,
+      leftAnchorUst: leftAnchor,
+      leftWalletsUst: leftWallets,
+      priceAfterRun,
+      reserveSpentUsd: spentThisBlock,
+      reserveBoughtUst: boughtThisBlock,
+      priceAfterReserve,
+      burnableUst: burnable,
+      burnedUst: burn,
+      fee,
+      printedLuna,
+      lunaPriceOpen,
+      lunaSoldUsd,
+      lunaCapOpen: lunaMarketCap,
+      lunaCapClose,
+      lunaPriceClose: world.lunaPrice,
+      priceClose: price,
+      deltaBeforeRecovery,
+      deltaClose: world.delta,
+    } satisfies BlockTrace);
+  }
 
   world.minUstPrice = Math.min(world.minUstPrice, price);
   if (block % BLOCKS_PER_HOUR === 0) {

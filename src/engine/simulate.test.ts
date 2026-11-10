@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import history from "@/data/may-2022.json";
 import { BLOCKS_PER_DAY, MAY_2022_MARKET } from "./market";
 import { SCENARIOS, withOverrides } from "./scenarios";
-import { buyUstBack, createWorld, findMinimumReserve, marketPrice, runBlock, simulate, type Point, type Scenario } from "./simulate";
+import { buyUstBack, createWorld, emptyTrace, findMinimumReserve, marketPrice, runBlock, simulate, type Point, type Scenario } from "./simulate";
 
 const asHappened = SCENARIOS.asHappened.scenario;
 const quiet: Scenario = { ...asHappened, shocks: [] };
@@ -32,6 +32,57 @@ describe("running the chain one block at a time", () => {
     const world = createWorld(asHappened);
     world.unsold = 8e9;
     expect(runBlock(world, asHappened, [], 0)).toBe(0);
+  });
+});
+
+describe("the detail of one block", () => {
+  /** A world in the middle of the run: UST is cheap, so every step has something to do. */
+  const midRun = () => {
+    const world = createWorld(asHappened);
+    const perBlock = asHappened.reserve.maxSpendPerDayUsd / BLOCKS_PER_DAY;
+    for (let block = 0; block < 3 * BLOCKS_PER_DAY; block++) runBlock(world, asHappened, [], perBlock);
+    return world;
+  };
+
+  it("changes nothing in the block", () => {
+    const plain = midRun();
+    const traced = midRun();
+    runBlock(plain, asHappened, [], 1e4);
+    runBlock(traced, asHappened, [], 1e4, emptyTrace());
+    expect(traced).toEqual(plain);
+  });
+
+  it("reports the block's opening price from the market's formula", () => {
+    const world = midRun();
+    const trace = emptyTrace();
+    runBlock(world, asHappened, [], 0, trace);
+    expect(trace.priceOpen).toBe(marketPrice(trace.unsoldOpen, trace.depthUsd));
+  });
+
+  it("reports what was burned and printed", () => {
+    const world = midRun();
+    const burnedBefore = world.ustBurned;
+    const lunaBefore = world.lunaSupply;
+    const trace = emptyTrace();
+    runBlock(world, asHappened, [], 0, trace);
+    expect(trace.burnedUst).toBeGreaterThan(0);
+    expect(trace.burnedUst).toBeCloseTo(world.ustBurned - burnedBefore, 6);
+    expect(trace.printedLuna).toBeCloseTo(world.lunaSupply - lunaBefore, 6);
+  });
+
+  it("leaves LUNA at the price it reports", () => {
+    const world = midRun();
+    const trace = emptyTrace();
+    runBlock(world, asHappened, [], 0, trace);
+    expect(trace.lunaPriceClose).toBe(world.lunaPrice);
+  });
+
+  it("shows the pool forgetting a slice of its past swaps", () => {
+    const world = midRun();
+    const trace = emptyTrace();
+    runBlock(world, asHappened, [], 0, trace);
+    expect(trace.deltaClose).toBeCloseTo(trace.deltaBeforeRecovery * (1 - 1 / asHappened.market.poolRecoveryBlocks), 6);
+    expect(trace.deltaClose).toBe(world.delta);
   });
 });
 
