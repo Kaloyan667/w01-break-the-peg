@@ -1,6 +1,9 @@
 "use client";
 
+import Link from "next/link";
+import { CRISES, closestCrisis, runCurve } from "@/engine/crises";
 import { GAME_DAYS, crashReport, dailyLimitUsd, status } from "@/engine/game";
+import { ToolNav } from "../ToolNav";
 import { Controls } from "./Controls";
 import { CrashCard } from "./CrashCard";
 import { CoverLine, Metrics } from "./Metrics";
@@ -18,9 +21,12 @@ export function Lab() {
   const finished = !moving && status(game) === "over";
   const { spiralHour } = game.world;
   const spiralling = spiralHour !== null && point.hour >= spiralHour;
+  const yourCurve = finished ? runCurve(game.points) : null;
+  const closest = yourCurve ? closestCrisis(yourCurve, CRISES) : null;
 
   return (
     <main data-surface="terminal" className="mx-auto max-w-5xl px-6 pt-1 pb-24">
+      <ToolNav />
       <h1 className="text-2xl font-[510] tracking-[-0.025em]">Seven days to save UST</h1>
       <p className="mt-1 mb-4 text-fg-2 text-pretty">You hold $3.0B of bitcoin. Choose your moves, then press Next day to run 24 hours of the chain.</p>
 
@@ -29,10 +35,13 @@ export function Lab() {
       <Terminal day={day} point={point} limitUsd={dailyLimitUsd(game.plan.mint)} results={results} points={game.points} />
 
       {finished ? (
-        <CrashCard report={crashReport(game)} modelHours={model.outcome.spiralHour} onRestart={restart} />
+        <CrashCard report={crashReport(game)} modelHours={model.outcome.spiralHour} closest={closest} onRestart={restart} />
       ) : spiralling ? (
-        <p role="status" className="mt-4 rounded-[10px] bg-signal p-4 text-center text-lg font-[510] text-bg">
-          Death spiral. The chain keeps printing LUNA, and nothing can stop it now.
+        <p role="status" className="mt-4 rounded-[10px] bg-signal p-4 text-center text-lg font-[510] text-pretty text-bg">
+          Death spiral. All the LUNA is worth less than all the UST, and your moves are over.{" "}
+          <Link href="/patterns#ust-2021" className="underline underline-offset-2">
+            In May 2021, UST came back from this line.
+          </Link>
         </p>
       ) : (
         <Controls game={game} moving={moving} play={play} />

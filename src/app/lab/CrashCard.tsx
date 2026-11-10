@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { useEffect, useRef } from "react";
+import type { Crisis } from "@/engine/crises";
 import type { CrashReport } from "@/engine/game";
 import { held, money, price, supply } from "./format";
 import { shareUrl } from "./share";
@@ -18,7 +20,7 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function CrashCard({ report, modelHours, onRestart }: { report: CrashReport; modelHours: number | null; onRestart: () => void }) {
+export function CrashCard({ report, modelHours, closest, onRestart }: { report: CrashReport; modelHours: number | null; closest: Crisis | null; onRestart: () => void }) {
   const card = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -32,6 +34,15 @@ export function CrashCard({ report, modelHours, onRestart }: { report: CrashRepo
         <p className="mt-4 text-6xl font-[510] tracking-[-0.03em] tabular-nums">{held(report.hoursHeld)}</p>
         <p className="mt-3 text-lg text-pretty">{VERDICT[report.outcome]}</p>
         {modelHours !== null && <p className="mt-3 text-sm text-fg-3">In this model, the real May 2022 lasted {held(modelHours)}.</p>}
+        {closest && (
+          <p className="mt-1 text-sm text-fg-3">
+            Your curve looks most like{" "}
+            <Link href={`/patterns#${closest.id}`} className="text-fg-2 underline underline-offset-2 hover:text-fg">
+              {closest.name}, {closest.when}
+            </Link>
+            . That compares shapes and predicts nothing.
+          </p>
+        )}
         <div className="mt-6 flex flex-wrap gap-3 lg:mt-auto lg:pt-6">
           <a
             href={shareUrl(report)}

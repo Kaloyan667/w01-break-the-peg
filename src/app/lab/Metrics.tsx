@@ -55,8 +55,8 @@ export function CoverLine({ point }: { point: Point }) {
         <div className={`h-full rounded-full ${lost ? "bg-signal" : "bg-fg"}`} style={{ width: `${Math.min(cover / COVER_SCALE, 1) * 100}%` }} />
         <i aria-hidden className="absolute -top-1.5 h-5 w-0.5 rounded-full bg-signal" style={{ left: `${(1 / COVER_SCALE) * 100}%` }} />
       </div>
-      <p className="mt-2 text-sm text-fg-3" style={{ paddingLeft: `calc(${(1 / COVER_SCALE) * 100}% - 7.5rem)` }}>
-        Under 100%, the death spiral starts
+      <p className="mt-2 text-sm text-fg-3" style={{ paddingLeft: `calc(${(1 / COVER_SCALE) * 100}% - 5.5rem)` }}>
+        Under 100%, this game ends
       </p>
     </section>
   );
