@@ -1,11 +1,39 @@
 import { describe, expect, it } from "vitest";
 import history from "@/data/may-2022.json";
-import { MAY_2022_MARKET } from "./market";
+import { BLOCKS_PER_DAY, MAY_2022_MARKET } from "./market";
 import { SCENARIOS, withOverrides } from "./scenarios";
-import { buyUstBack, findMinimumReserve, marketPrice, simulate, type Scenario } from "./simulate";
+import { buyUstBack, createWorld, findMinimumReserve, marketPrice, runBlock, simulate, type Point, type Scenario } from "./simulate";
 
 const asHappened = SCENARIOS.asHappened.scenario;
 const quiet: Scenario = { ...asHappened, shocks: [] };
+
+describe("running the chain one block at a time", () => {
+  const byHand = (scenario: Scenario) => {
+    const world = createWorld(scenario);
+    const points: Point[] = [];
+    const perBlock = scenario.reserve.maxSpendPerDayUsd / BLOCKS_PER_DAY;
+    for (let block = 0; block <= scenario.days * BLOCKS_PER_DAY; block++) runBlock(world, scenario, points, perBlock);
+    return points;
+  };
+
+  it("gives exactly the points of a full run", () => {
+    expect(byHand(asHappened)).toEqual(simulate(asHappened).points);
+  });
+
+  it("reports what the reserve spent in the block", () => {
+    const world = createWorld(asHappened);
+    world.unsold = 8e9;
+    const spent = runBlock(world, asHappened, [], 1e6);
+    expect(spent).toBeCloseTo(1e6, 0);
+    expect(world.reserveUsd).toBeCloseTo(asHappened.reserve.usd - 1e6, 0);
+  });
+
+  it("spends nothing without a budget", () => {
+    const world = createWorld(asHappened);
+    world.unsold = 8e9;
+    expect(runBlock(world, asHappened, [], 0)).toBe(0);
+  });
+});
 
 describe("a calm market", () => {
   it("holds the peg when nobody sells", () => {

@@ -143,126 +143,168 @@ export function confidentDepth(behavior: Behavior, lunaMarketCap: number, ustSup
   return behavior.marketDepthUsd * cover ** behavior.confidenceSensitivity;
 }
 
-export function simulate(scenario: Scenario): SimulationResult {
-  const { market, behavior, days, start, shocks, reserve, chainHaltDay, hardBackingShare } = scenario;
-  const totalBlocks = days * BLOCKS_PER_DAY;
-  const shockAtBlock = new Map(shocks.map(({ day, ustSold }) => [Math.round(day * BLOCKS_PER_DAY), ustSold]));
+/** Everything that changes from one block to the next. */
+export type World = {
+  /** The next block to run. */
+  block: number;
+  /** TerraPoolDelta, see market.ts. */
+  delta: number;
+  ustSupply: number;
+  anchor: number;
+  wallets: number;
+  lunaSupply: number;
+  lunaPrice: number;
+  /** UST looking for a buyer. */
+  unsold: number;
+  reserveUsd: number;
+  panic: number;
+  ustBurned: number;
+  minUstPrice: number;
+  breakHour: number | null;
+  spiralHour: number | null;
+};
 
-  let delta = 0;
-  let ustSupply = start.ustSupply;
-  let anchor = start.anchorDeposits;
-  let wallets = start.ustSupply - start.anchorDeposits;
-  let lunaSupply = start.lunaSupply;
-  let lunaPrice = start.lunaPriceUsd;
-  let unsold = 0;
-  let reserveUsd = reserve.usd;
-  let panic = 0;
-  let ustBurned = 0;
-  let breakHour: number | null = null;
-  let spiralHour: number | null = null;
-  let minUstPrice = 1;
+export function createWorld({ start, reserve }: Scenario): World {
+  return {
+    block: 0,
+    delta: 0,
+    ustSupply: start.ustSupply,
+    anchor: start.anchorDeposits,
+    wallets: start.ustSupply - start.anchorDeposits,
+    lunaSupply: start.lunaSupply,
+    lunaPrice: start.lunaPriceUsd,
+    unsold: 0,
+    reserveUsd: reserve.usd,
+    panic: 0,
+    ustBurned: 0,
+    minUstPrice: 1,
+    breakHour: null,
+    spiralHour: null,
+  };
+}
 
-  const reserveMaxPerBlock = reserve.maxSpendPerDayUsd / BLOCKS_PER_DAY;
-  const haltBlock = chainHaltDay === null ? Infinity : chainHaltDay * BLOCKS_PER_DAY;
-  const points: Point[] = [];
+/**
+ * Runs one block of the chain, changing `world` in place, and adds a point to `points` on the hour.
+ * The reserve may spend up to `reserveBudgetUsd` in this block. Returns what it did spend.
+ */
+export function runBlock(world: World, scenario: Scenario, points: Point[], reserveBudgetUsd: number): number {
+  const { market, behavior, shocks, reserve, chainHaltDay, hardBackingShare } = scenario;
+  const { block } = world;
 
-  for (let block = 0; block <= totalBlocks; block++) {
-    const shock = shockAtBlock.get(block) ?? 0;
-    if (shock > 0) {
-      const fromAnchor = Math.min(shock, anchor);
-      anchor -= fromAnchor;
-      wallets -= Math.min(shock - fromAnchor, wallets);
-      unsold += shock;
-    }
-
-    const quote = () => marketPrice(unsold, confidentDepth(behavior, lunaPrice * lunaSupply, ustSupply));
-    let price = quote();
-
-    // A hard-backed share is redeemed at a dollar: the market cannot fall through that floor for it.
-    const backed = Math.min(unsold * hardBackingShare, unsold);
-    unsold -= backed;
-    ustSupply -= backed;
-
-    // People run: the larger the discount, the larger the share of holders leaving.
-    const lunaMarketCap = lunaPrice * lunaSupply;
-    const discount = 1 - price;
-    const targetPanic = Math.min(Math.max(discount - behavior.ignoredDiscount, 0) / behavior.fullPanicDiscount, 1);
-    panic += (targetPanic - panic) / behavior.panicLagBlocks;
-    const fearMultiple = lunaMarketCap < ustSupply ? 1 + behavior.undercollateralizedFear : 1;
-    const fleeing = Math.min(panic * fearMultiple, 1) / BLOCKS_PER_DAY;
-    const leftAnchor = anchor * behavior.anchorFleePerDay * fleeing;
-    const leftWallets = wallets * behavior.walletFleePerDay * fleeing;
-    anchor -= leftAnchor;
-    wallets -= leftWallets;
-    unsold += leftAnchor + leftWallets;
-
-    // The reserve buys UST off the market while it has money left.
-    price = quote();
-    if (price < reserve.triggerPrice && reserveUsd > 0 && unsold > 0) {
-      const { boughtUst, spentUsd } = buyUstBack({
-        unsold,
-        budgetUsd: Math.min(reserveUsd, reserveMaxPerBlock),
-        depthUsd: confidentDepth(behavior, lunaPrice * lunaSupply, ustSupply),
-        stopPrice: reserve.triggerPrice,
-      });
-      reserveUsd -= spentUsd;
-      unsold -= boughtUst;
-      price = quote();
-    }
-
-    // Arbitrageurs buy cheap UST, burn it for a dollar of LUNA and sell the LUNA, until the spread
-    // eats the discount.
-    const chainRunning = block < haltBlock;
-    const burnable = burnToReachSpread({ delta, params: market, targetSpread: 1 - price });
-    const burn = chainRunning ? Math.min(burnable, unsold) : 0;
-    if (burn > 0) {
-      const swap = computeSwap({ delta, params: market, offer: "ust", amount: burn, lunaPriceUsd: lunaPrice });
-      delta = swap.delta;
-      unsold -= burn;
-      ustSupply -= burn;
-      ustBurned += burn;
-
-      const soldUsd = swap.out * lunaPrice;
-      const capAfterSale = lunaMarketCap * Math.exp((-behavior.lunaSellImpact * soldUsd) / lunaMarketCap);
-      lunaSupply += swap.out;
-      lunaPrice = Math.max(capAfterSale / lunaSupply, LUNA_PRICE_FLOOR);
-      price = quote();
-    }
-
-    delta = replenishPool(delta, market);
-
-    minUstPrice = Math.min(minUstPrice, price);
-    if (block % BLOCKS_PER_HOUR === 0) {
-      const hour = block / BLOCKS_PER_HOUR;
-      const cap = lunaPrice * lunaSupply;
-      if (breakHour === null && price < 0.95) breakHour = hour;
-      if (spiralHour === null && cap < ustSupply) spiralHour = hour;
-      points.push({
-        hour,
-        ustPrice: price,
-        lunaPrice,
-        ustSupply,
-        lunaSupply,
-        lunaMarketCap: cap,
-        anchorDeposits: anchor,
-        reserveUsd,
-        spread: computeSwap({ delta, params: market, offer: "ust", amount: 1, lunaPriceUsd: lunaPrice }).spread,
-        panic,
-      });
-    }
+  const shock = shocks.find(({ day }) => Math.round(day * BLOCKS_PER_DAY) === block)?.ustSold ?? 0;
+  if (shock > 0) {
+    const fromAnchor = Math.min(shock, world.anchor);
+    world.anchor -= fromAnchor;
+    world.wallets -= Math.min(shock - fromAnchor, world.wallets);
+    world.unsold += shock;
   }
+
+  const depth = () => confidentDepth(behavior, world.lunaPrice * world.lunaSupply, world.ustSupply);
+  const quote = () => marketPrice(world.unsold, depth());
+  let price = quote();
+
+  // A hard-backed share is redeemed at a dollar: the market cannot fall through that floor for it.
+  const backed = Math.min(world.unsold * hardBackingShare, world.unsold);
+  world.unsold -= backed;
+  world.ustSupply -= backed;
+
+  // People run: the larger the discount, the larger the share of holders leaving.
+  const lunaMarketCap = world.lunaPrice * world.lunaSupply;
+  const discount = 1 - price;
+  const targetPanic = Math.min(Math.max(discount - behavior.ignoredDiscount, 0) / behavior.fullPanicDiscount, 1);
+  world.panic += (targetPanic - world.panic) / behavior.panicLagBlocks;
+  const fearMultiple = lunaMarketCap < world.ustSupply ? 1 + behavior.undercollateralizedFear : 1;
+  const fleeing = Math.min(world.panic * fearMultiple, 1) / BLOCKS_PER_DAY;
+  const leftAnchor = world.anchor * behavior.anchorFleePerDay * fleeing;
+  const leftWallets = world.wallets * behavior.walletFleePerDay * fleeing;
+  world.anchor -= leftAnchor;
+  world.wallets -= leftWallets;
+  world.unsold += leftAnchor + leftWallets;
+
+  // The reserve buys UST off the market while it has money left.
+  price = quote();
+  const budgetUsd = Math.min(world.reserveUsd, reserveBudgetUsd);
+  let spentThisBlock = 0;
+  if (price < reserve.triggerPrice && budgetUsd > 0 && world.unsold > 0) {
+    const { boughtUst, spentUsd } = buyUstBack({
+      unsold: world.unsold,
+      budgetUsd,
+      depthUsd: depth(),
+      stopPrice: reserve.triggerPrice,
+    });
+    world.reserveUsd -= spentUsd;
+    world.unsold -= boughtUst;
+    spentThisBlock = spentUsd;
+    price = quote();
+  }
+
+  // Arbitrageurs buy cheap UST, burn it for a dollar of LUNA and sell the LUNA, until the spread
+  // eats the discount.
+  const chainRunning = chainHaltDay === null || block < chainHaltDay * BLOCKS_PER_DAY;
+  const burnable = burnToReachSpread({ delta: world.delta, params: market, targetSpread: 1 - price });
+  const burn = chainRunning ? Math.min(burnable, world.unsold) : 0;
+  if (burn > 0) {
+    const swap = computeSwap({ delta: world.delta, params: market, offer: "ust", amount: burn, lunaPriceUsd: world.lunaPrice });
+    world.delta = swap.delta;
+    world.unsold -= burn;
+    world.ustSupply -= burn;
+    world.ustBurned += burn;
+
+    const soldUsd = swap.out * world.lunaPrice;
+    const capAfterSale = lunaMarketCap * Math.exp((-behavior.lunaSellImpact * soldUsd) / lunaMarketCap);
+    world.lunaSupply += swap.out;
+    world.lunaPrice = Math.max(capAfterSale / world.lunaSupply, LUNA_PRICE_FLOOR);
+    price = quote();
+  }
+
+  world.delta = replenishPool(world.delta, market);
+
+  world.minUstPrice = Math.min(world.minUstPrice, price);
+  if (block % BLOCKS_PER_HOUR === 0) {
+    const hour = block / BLOCKS_PER_HOUR;
+    const cap = world.lunaPrice * world.lunaSupply;
+    if (world.breakHour === null && price < 0.95) world.breakHour = hour;
+    if (world.spiralHour === null && cap < world.ustSupply) world.spiralHour = hour;
+    points.push({
+      hour,
+      ustPrice: price,
+      lunaPrice: world.lunaPrice,
+      ustSupply: world.ustSupply,
+      lunaSupply: world.lunaSupply,
+      lunaMarketCap: cap,
+      anchorDeposits: world.anchor,
+      reserveUsd: world.reserveUsd,
+      spread: computeSwap({ delta: world.delta, params: market, offer: "ust", amount: 1, lunaPriceUsd: world.lunaPrice }).spread,
+      panic: world.panic,
+    });
+  }
+
+  world.block = block + 1;
+  return spentThisBlock;
+}
+
+/** UST ended the run at its peg, never collapsed on the way, and all the LUNA still covers all the UST. */
+export function heldThePeg(world: World, last: Point, hardBackingShare: number): boolean {
+  return last.ustPrice >= SURVIVAL_PRICE && world.minUstPrice > 0.5 && (hardBackingShare === 1 || last.lunaMarketCap >= last.ustSupply);
+}
+
+export function simulate(scenario: Scenario): SimulationResult {
+  const world = createWorld(scenario);
+  const points: Point[] = [];
+  const reserveMaxPerBlock = scenario.reserve.maxSpendPerDayUsd / BLOCKS_PER_DAY;
+  for (let block = 0; block <= scenario.days * BLOCKS_PER_DAY; block++) runBlock(world, scenario, points, reserveMaxPerBlock);
 
   const last = points[points.length - 1];
   return {
     points,
     outcome: {
-      survived: last.ustPrice >= SURVIVAL_PRICE && minUstPrice > 0.5 && (hardBackingShare === 1 || last.lunaMarketCap >= last.ustSupply),
-      minUstPrice,
+      survived: heldThePeg(world, last, scenario.hardBackingShare),
+      minUstPrice: world.minUstPrice,
       finalUstPrice: last.ustPrice,
       finalLunaPrice: last.lunaPrice,
-      ustBurned,
-      breakHour,
-      spiralHour,
+      ustBurned: world.ustBurned,
+      breakHour: world.breakHour,
+      spiralHour: world.spiralHour,
     },
   };
 }
