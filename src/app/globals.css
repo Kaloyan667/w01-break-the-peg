@@ -23,6 +23,17 @@
   }
 }
 
+/* The simulator is a dark room, whatever the system says. */
+:root:has([data-surface="terminal"]) {
+  --bg: #161615;
+  --surface: #1c1c1b;
+  --text: #ecebe6;
+  --text-2: #a3a29c;
+  --text-3: #8a8983;
+  --line: rgb(236 235 230 / 0.1);
+  color-scheme: dark;
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
