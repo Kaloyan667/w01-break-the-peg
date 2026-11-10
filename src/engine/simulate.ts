@@ -69,6 +69,8 @@ export type Point = {
   /** The fee the chain charges right now to burn UST. */
   spread: number;
   panic: number;
+  /** UST looking for a buyer. */
+  unsoldUst: number;
 };
 
 export type Outcome = {
@@ -276,6 +278,7 @@ export function runBlock(world: World, scenario: Scenario, points: Point[], rese
       reserveUsd: world.reserveUsd,
       spread: computeSwap({ delta: world.delta, params: market, offer: "ust", amount: 1, lunaPriceUsd: world.lunaPrice }).spread,
       panic: world.panic,
+      unsoldUst: world.unsold,
     });
   }
 
