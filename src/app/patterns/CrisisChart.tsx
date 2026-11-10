@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { HORIZON_DAYS } from "@/engine/crises";
 import { price } from "../lab/format";
+import { useElementWidth } from "../useElementWidth";
 
 export type Series = { id: string; label: string; curve: number[]; returned: boolean };
 
@@ -15,17 +16,8 @@ const TOOLTIP_WIDTH = 190;
 
 /** Every coin's price, aligned on the day it broke. Colour says how the crisis ended. */
 export function CrisisChart({ series, selectedId }: { series: Series[]; selectedId: string }) {
-  const box = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(720);
+  const [box, width] = useElementWidth(720);
   const [hoverDay, setHoverDay] = useState<number | null>(null);
-
-  useEffect(() => {
-    const element = box.current;
-    if (!element) return;
-    const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
 
   const plotWidth = Math.max(width - MARGIN.left - MARGIN.right, 1);
   const x = (day: number) => MARGIN.left + (day / HORIZON_DAYS) * plotWidth;

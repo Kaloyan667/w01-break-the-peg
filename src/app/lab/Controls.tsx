@@ -52,7 +52,7 @@ export function Controls({ game, moving, play }: { game: Game; moving: boolean; 
           plan.defendUsd > 0
             ? `${money(plan.defendUsd)} committed today, spent only if UST falls under ${TRIGGER_CENTS} cents.`
             : canDefend
-              ? `Add ${money(DEFEND_STEP_USD)} to today's budget. Press as often as you like.`
+              ? `Buy UST to hold the price. Each press adds ${money(DEFEND_STEP_USD)} for today.`
               : "The reserve is empty."
         }
         on={plan.defendUsd > 0}
@@ -62,7 +62,7 @@ export function Controls({ game, moving, play }: { game: Game; moving: boolean; 
       />
       <Action
         title="Mint more LUNA"
-        detail={`Raise today's limit from ${money(dailyLimitUsd(false))} to ${money(dailyLimitUsd(true))}. Every UST burned prints more LUNA.`}
+        detail={`Raise today's limit from ${money(dailyLimitUsd(false))} to ${money(dailyLimitUsd(true))}. More UST burned, more LUNA printed.`}
         on={plan.mint}
         pressable
         disabled={moving}
@@ -70,7 +70,7 @@ export function Controls({ game, moving, play }: { game: Game; moving: boolean; 
       />
       <Action
         title="Raise yield / bluff"
-        detail={strength > 0 ? `Hold back ${percent(strength)} of Anchor's withdrawals today. Works less each time.` : "Nobody believes you anymore."}
+        detail={strength > 0 ? `Hold back ${percent(strength)} of Anchor's withdrawals today.` : "Nobody believes you anymore."}
         note="Effect size is invented, not calibrated on data."
         on={plan.bluff}
         pressable
@@ -81,7 +81,7 @@ export function Controls({ game, moving, play }: { game: Game; moving: boolean; 
         type="button"
         onClick={() => play("next")}
         disabled={moving}
-        className="rounded-[10px] bg-fg px-8 py-4 font-[510] text-bg transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-[10px] bg-fg px-8 py-4 font-[510] text-bg transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg disabled:cursor-not-allowed max-sm:fixed max-sm:inset-x-6 max-sm:bottom-4 max-sm:z-10 max-sm:shadow-lg disabled:opacity-50"
       >
         Next day
       </button>

@@ -47,7 +47,7 @@ export function CoverLine({ point }: { point: Point }) {
   const cover = point.lunaMarketCap / point.ustSupply;
   const lost = cover < 1;
   return (
-    <section aria-label="LUNA cover" className="py-4">
+    <section aria-label="LUNA cover" className="pt-4">
       <p className="text-fg-2">
         All the LUNA is worth <span className={`font-[510] tabular-nums ${lost ? "text-signal" : "text-fg"}`}>{percent(cover)}</span> of all the UST
       </p>
