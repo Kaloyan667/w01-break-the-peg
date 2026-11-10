@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState, useSyncExternalStore } from "react";
-import { CRISES, HORIZON_DAYS, curveOf, measure, type Crisis, type Measures } from "@/engine/crises";
+import { HORIZON_DAYS, curveOf, type Crisis } from "@/engine/crises";
 import { ToolNav } from "../ToolNav";
 import { percent, price } from "../lab/format";
 import { CrisisChart, type Series } from "./CrisisChart";
+import { crisisRows, findings, type Row } from "./findings";
 
 const label = (crisis: Crisis) => `${crisis.name} ${crisis.when.split(" ").pop()}`;
 const noSubscribe = () => () => {};
@@ -19,29 +20,8 @@ const BACKING_KIND: Record<Crisis["backingKind"], string> = {
 const returnText = (days: number | null) => (days === null ? "Never" : days === 1 ? "After 1 day" : `After ${days} days`);
 const supplyText = (left: number | null) => (left === null ? "No data" : left < 0 ? `Grew ${percent(-left)}` : percent(left));
 
-type Row = { crisis: Crisis; measures: Measures };
-
-function range(values: number[]): string {
-  const low = percent(Math.min(...values));
-  const high = percent(Math.max(...values));
-  return low === high ? low : `${low} to ${high}`;
-}
-
-/** What the grid shows, written from the data so that the sentences cannot drift from the table. */
-function findings(rows: Row[]): string[] {
-  const back = rows.filter(({ measures }) => measures.daysToReturn !== null);
-  const gone = rows.filter(({ measures }) => measures.daysToReturn === null);
-  const slowest = Math.max(...back.map(({ measures }) => measures.daysToReturn!));
-  const fell = (group: Row[]) => group.flatMap(({ measures }) => (measures.backingFell === null ? [] : [measures.backingFell]));
-  return [
-    `${back.length} coins came back to 99 cents, the slowest after ${slowest} days. The other ${gone.length} were not back three weeks later.`,
-    `Coins leaning on a token of their own: the ones that came back saw that token lose ${range(fell(back))}, the others ${range(fell(gone))}.`,
-    "Outside assets did not protect everyone: USDC and DAI came back, but USDR's real estate could not be sold fast enough once its liquid DAI ran out.",
-  ];
-}
-
 export function Patterns() {
-  const rows = useMemo<Row[]>(() => CRISES.map((crisis) => ({ crisis, measures: measure(crisis) })), []);
+  const rows = useMemo<Row[]>(() => crisisRows(), []);
   const series = useMemo<Series[]>(() => rows.map(({ crisis, measures }) => ({ id: crisis.id, label: label(crisis), curve: curveOf(crisis.days), returned: measures.daysToReturn !== null })), [rows]);
 
   const hash = useSyncExternalStore(noSubscribe, hashOfPage, () => "");

@@ -1,16 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { CRISES, closestCrisis, runCurve } from "@/engine/crises";
 import { GAME_DAYS, crashReport, dailyLimitUsd, status } from "@/engine/game";
-import { week } from "@/week";
-import { ToolNav } from "../ToolNav";
 import { answerParagraphs } from "./answer";
-import { Briefing } from "./Briefing";
+import { codeFromHash, decodeRun, encodeRun, replayRun } from "./challenge";
 import { Controls } from "./Controls";
 import { CrashCard } from "./CrashCard";
 import { explainDay } from "./explain";
+import { held } from "./format";
 import { Glossary } from "./Glossary";
 import { CoverLine, Metrics } from "./Metrics";
 import { RunChart } from "./RunChart";
@@ -31,11 +30,29 @@ function Answer({ paragraphs }: { paragraphs: string[] }) {
   );
 }
 
+const onHashChange = (notify: () => void) => {
+  window.addEventListener("hashchange", notify);
+  return () => window.removeEventListener("hashchange", notify);
+};
+const hashOfPage = () => window.location.hash;
+const noHash = () => "";
+
 /** `answer` is the text of answer.md, read when the site is built. */
 export function Lab({ answer }: { answer: string }) {
   const { game, point, moving, play, restart } = useGame();
-  const [briefing, setBriefing] = useState(true);
   const model = useSimulation("asHappened");
+
+  // A link like /#beat=0a00000 holds someone's run: the moves alone are enough to replay it here.
+  const hash = useSyncExternalStore(onHashChange, hashOfPage, noHash);
+  const rivalHours = useMemo(() => {
+    const code = codeFromHash(hash);
+    const moves = code === null ? null : decodeRun(code);
+    return moves === null ? null : crashReport(replayRun(moves)).hoursHeld;
+  }, [hash]);
+
+  useEffect(() => {
+    if (rivalHours !== null) document.getElementById("play")?.scrollIntoView();
+  }, [rivalHours]);
 
   // While a played day is being replayed, the page still shows the morning of that day.
   const day = Math.min(moving ? game.day - 1 : game.day, GAME_DAYS - 1);
@@ -50,57 +67,48 @@ export function Lab({ answer }: { answer: string }) {
   const paragraphs = answerParagraphs(answer);
 
   return (
-    <main data-surface="terminal" className="mx-auto max-w-5xl px-6 pt-1 pb-24">
-      <ToolNav />
-      <h1 className="max-w-[34em] text-2xl font-[510] tracking-[-0.025em] text-balance">{week.question}</h1>
-      {briefing ? (
-        <Briefing resuming={game.day > 0} onStart={() => setBriefing(false)} />
-      ) : (
-        <>
-          <p className="mt-2 mb-4 max-w-[52em] text-fg-2 text-pretty">
-            Keep UST at $1 for seven days. Pick your moves, then press Next day to see the next 24 hours.{" "}
-            <button type="button" onClick={() => setBriefing(true)} className="rounded underline underline-offset-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg">
-              How it worked
-            </button>
-          </p>
-
-          <Metrics point={point} committedUsd={game.plan.defendUsd} />
-
-          <section aria-label="Timeline" className="mt-4 grid grid-cols-[minmax(0,1fr)] rounded-xl border border-line bg-surface lg:grid-cols-2">
-            <Story day={day} point={point} limitUsd={dailyLimitUsd(game.plan.mint)} explanation={explanation} />
-            <div className="border-t border-line p-5 lg:border-t-0 lg:border-l">
-              <RunChart points={game.points.slice(0, point.hour + 1)} />
-              <CoverLine point={point} />
-            </div>
-          </section>
-
-          {finished ? (
-            <>
-              <CrashCard report={crashReport(game)} modelHours={model.outcome.spiralHour} closest={closest} onRestart={restart} />
-              {paragraphs.length > 0 && <Answer paragraphs={paragraphs} />}
-            </>
-          ) : spiralling ? (
-            <p role="status" className="mt-4 rounded-[10px] bg-signal p-4 text-center text-lg font-[510] text-pretty text-bg">
-              LUNA no longer covers UST.{" "}
-              <Link href="/patterns#ust-2021" className="underline underline-offset-2">
-                In May 2021 it came back from here.
-              </Link>{" "}
-              In May 2022 it didn&apos;t.
-            </p>
-          ) : (
-            <Controls game={game} moving={moving} play={play} />
-          )}
-
-          <WeekLog results={results} points={game.points} />
-          <Glossary />
-
-          <p className="mt-8 max-w-[52em] text-sm text-fg-3 text-pretty">
-            The swap rules are ported from Terra&apos;s own code. How people react is an assumption tuned to the daily data of May 2022, and the effect of the bluff is
-            made up. Daily limits are computed from those rules at the minimum fee, 2% by default in Terra&apos;s code, with no dated record for May 2022. Terra&apos;s proposal
-            quoted $293M and $1.2B. LUNA&apos;s price stops at a floor of $0.000001, which is why its supply is not counted past 10 trillion.
-          </p>
-        </>
+    <div>
+      {rivalHours !== null && (
+        <p role="status" className="mb-4 rounded-[10px] border border-signal p-4 text-lg text-pretty">
+          Someone held UST for <span className="font-[510] tabular-nums">{held(rivalHours)}</span> with these same rules. Beat it.
+        </p>
       )}
-    </main>
+      <p className="mb-4 max-w-[52em] text-fg-2 text-pretty">Pick your moves, then press Next day to see the next 24 hours.</p>
+
+      <Metrics point={point} committedUsd={game.plan.defendUsd} />
+
+      <section aria-label="Timeline" className="mt-4 grid grid-cols-[minmax(0,1fr)] rounded-xl border border-line bg-surface lg:grid-cols-2">
+        <Story day={day} point={point} limitUsd={dailyLimitUsd(game.plan.mint)} explanation={explanation} />
+        <div className="border-t border-line p-5 lg:border-t-0 lg:border-l">
+          <RunChart points={game.points.slice(0, point.hour + 1)} />
+          <CoverLine point={point} />
+        </div>
+      </section>
+
+      {finished ? (
+        <CrashCard report={crashReport(game)} modelHours={model.outcome.spiralHour} closest={closest} runCode={encodeRun(game.results)} rivalHours={rivalHours} onRestart={restart} />
+      ) : spiralling ? (
+        <p role="status" className="mt-4 rounded-[10px] bg-signal p-4 text-center text-lg font-[510] text-pretty text-bg">
+          LUNA no longer covers UST.{" "}
+          <Link href="/patterns#ust-2021" className="underline underline-offset-2">
+            In May 2021 it came back from here.
+          </Link>{" "}
+          In May 2022 it didn&apos;t.
+        </p>
+      ) : (
+        <Controls game={game} moving={moving} play={play} />
+      )}
+
+      {paragraphs.length > 0 && <Answer paragraphs={paragraphs} />}
+
+      <WeekLog results={results} points={game.points} />
+      <Glossary />
+
+      <p className="mt-8 max-w-[52em] text-sm text-fg-3 text-pretty">
+        The swap rules are ported from Terra&apos;s own code. How people react is an assumption tuned to the daily data of May 2022, and the effect of the bluff is
+        made up. Daily limits are computed from those rules at the minimum fee, 2% by default in Terra&apos;s code, with no dated record for May 2022. Terra&apos;s proposal
+        quoted $293M and $1.2B. LUNA&apos;s price stops at a floor of $0.000001, which is why its supply is not counted past 10 trillion.
+      </p>
+    </div>
   );
 }

@@ -15,7 +15,15 @@ const GRID_DAYS = [0, 7, 14, 21];
 const TOOLTIP_WIDTH = 190;
 
 /** Every coin's price, aligned on the day it broke. Colour says how the crisis ended. */
-export function CrisisChart({ series, selectedId }: { series: Series[]; selectedId: string }) {
+export function CrisisChart({
+  series,
+  selectedId,
+  description = "Eight stablecoin prices over the three weeks after each broke its peg. The table below holds the same results.",
+}: {
+  series: Series[];
+  selectedId: string;
+  description?: string;
+}) {
   const [box, width] = useElementWidth(720);
   const [hoverDay, setHoverDay] = useState<number | null>(null);
 
@@ -44,7 +52,7 @@ export function CrisisChart({ series, selectedId }: { series: Series[]; selected
     <div ref={box} className="relative">
       <svg
         role="img"
-        aria-label="Eight stablecoin prices over the three weeks after each broke its peg. The table below holds the same results."
+        aria-label={description}
         width={width}
         height={HEIGHT}
         onPointerMove={moveHover}

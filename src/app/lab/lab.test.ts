@@ -135,10 +135,14 @@ describe("sharing on X", () => {
     expect(shareText(report).length).toBeLessThanOrEqual(256);
   });
 
-  it("opens X with the text and the link to the game", () => {
-    const url = new URL(shareUrl(report));
+  it("dares the reader to do better", () => {
+    expect(shareText(report)).toContain("Can you beat it?");
+  });
+
+  it("opens X with the text and a link that replays this exact run", () => {
+    const url = new URL(shareUrl(report, "0000000"));
     expect(url.hostname).toBe("x.com");
     expect(url.searchParams.get("text")).toBe(shareText(report));
-    expect(url.searchParams.get("url")).toBe("https://w01.hemera.one");
+    expect(url.searchParams.get("url")).toBe("https://w01.hemera.one/#beat=0000000");
   });
 });

@@ -27,7 +27,7 @@ function Action({
       onClick={onPress}
       disabled={disabled}
       aria-pressed={pressable ? on : undefined}
-      className="rounded-[10px] border border-line bg-surface p-4 text-left transition-colors hover:bg-fg/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-surface"
+      className="rounded-[10px] border border-line bg-surface p-4 text-left transition-colors hover:bg-fg/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-surface max-sm:mt-3 max-sm:block max-sm:w-full"
     >
       <span className="flex items-center gap-2 font-[510]">
         {title}
@@ -44,8 +44,10 @@ export function Controls({ game, moving, play }: { game: Game; moving: boolean; 
   const canDefend = world.reserveUsd - plan.defendUsd > 0;
   const strength = bluffStrength(game);
 
+  // On a phone the section dissolves (`contents`) so that Next day can stick to the bottom of the screen
+  // for as long as the game is in view, and no longer: its limit is the game, not this row of buttons.
   return (
-    <section aria-label="Your moves" className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto]">
+    <section aria-label="Your moves" className="mt-4 grid gap-3 max-sm:contents sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto]">
       <Action
         title="Defend with BTC"
         detail={
@@ -81,7 +83,7 @@ export function Controls({ game, moving, play }: { game: Game; moving: boolean; 
         type="button"
         onClick={() => play("next")}
         disabled={moving}
-        className="rounded-[10px] bg-fg px-8 py-4 font-[510] text-bg transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg disabled:cursor-not-allowed max-sm:fixed max-sm:inset-x-6 max-sm:bottom-4 max-sm:z-10 max-sm:shadow-lg disabled:opacity-50"
+        className="rounded-[10px] bg-fg px-8 py-4 font-[510] text-bg transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg disabled:cursor-not-allowed max-sm:sticky max-sm:bottom-4 max-sm:z-10 max-sm:mt-3 max-sm:block max-sm:w-full max-sm:shadow-lg disabled:opacity-50"
       >
         Next day
       </button>

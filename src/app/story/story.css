@@ -1,0 +1,71 @@
+/* The opening: one sticky screen. Its light half is a tank drawn to scale, $1 at the peg line and $0 at
+   the bottom edge, and scrolling drains it along UST's real price. The light half is Hemera's light
+   theme and what it uncovers is Hemera's dark room, so the same tokens are simply set again here. */
+.opening-track {
+  height: 680svh;
+  /* The caption changes length as the story moves on: that must never nudge the scroll position. */
+  overflow-anchor: none;
+}
+
+.opening-stage {
+  --band: 60px;
+  --p: 1;
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.opening-layer {
+  --numeral-color: var(--signal);
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.opening-layer-light {
+  --bg: #fafaf9;
+  --text: #161615;
+  --text-2: #6b6a65;
+  --text-3: #6b6a65;
+  --numeral-color: #161615;
+  clip-path: inset(calc(var(--band) + (100% - var(--band)) * (1 - var(--p))) 0 0 0);
+}
+
+.opening-numeral {
+  /* Five characters across the column, or as tall as a short screen allows. */
+  font-size: min(calc(min(976px, 100vw - 48px) / 2.62), 38svh);
+  margin-top: 0.08em;
+  margin-left: -0.045em;
+  font-weight: 500;
+  line-height: 0.92;
+  letter-spacing: -0.055em;
+  font-variant-numeric: tabular-nums;
+  color: var(--numeral-color);
+}
+
+.opening-line {
+  animation: opening-line 220ms ease-out;
+}
+
+@keyframes opening-line {
+  from {
+    opacity: 0.25;
+  }
+}
+
+/* Every digit of the supply of LUNA fits the column once the count reaches trillions. */
+.press-digits {
+  font-size: min(calc((min(976px, 100vw - 48px) - 56px) / 9.4), 6.5rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .opening-line {
+    animation: none;
+  }
+}
