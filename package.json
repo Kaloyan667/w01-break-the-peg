@@ -7,7 +7,8 @@
     "build": "next build",
     "lint": "eslint",
     "test": "vitest run",
-    "odds": "vite-node scripts/build-rescue-odds.ts"
+    "odds": "vite-node scripts/build-rescue-odds.ts",
+    "crises": "vite-node scripts/build-crises.ts"
   },
   "dependencies": {
     "next": "16.4.3",
