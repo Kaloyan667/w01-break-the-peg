@@ -17,9 +17,9 @@ export function dayLines(result: DayResult, close: Point): string[] {
         : `${money(plan.defendUsd)} committed, none spent: UST stayed above ${TRIGGER_CENTS} cents.`,
     );
   }
-  if (plan.mint) lines.push(`Proposal 1164 applied: the limit was ${money(dailyLimitUsd(true))} today.`);
+  if (plan.mint) lines.push(`You raised the daily limit to ${money(dailyLimitUsd(true))}.`);
   if (plan.bluff) lines.push("Yield raised: fewer deposits left Anchor today.");
-  lines.push(burnedUst > 0 ? `The chain burned ${coins(burnedUst)} UST and printed ${supply(printedLuna).replace("Over", "over")} LUNA.` : "No UST was burned today.");
+  lines.push(burnedUst > 0 ? `The system destroyed ${coins(burnedUst)} UST and printed ${supply(printedLuna).replace("Over", "over")} LUNA.` : "No UST was destroyed today.");
   lines.push(`Close: UST ${price(close.ustPrice)}, LUNA ${price(close.lunaPrice)}.`);
   if (spiralStarted) lines.push("All the LUNA is now worth less than all the UST. The death spiral has started.");
 

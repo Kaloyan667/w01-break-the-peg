@@ -24,6 +24,7 @@ function PanicMeter({ panic }: { panic: number }) {
       <div role="meter" aria-label="Panic" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(panic * 100)} className="mt-3 h-1.5 rounded-full bg-line">
         <div className="h-full rounded-full bg-signal" style={{ width: percent(panic) }} />
       </div>
+      <p className="mt-2 text-sm text-fg-3">Holders rushing to leave</p>
     </div>
   );
 }
@@ -32,11 +33,11 @@ export function Metrics({ point, committedUsd }: { point: Point; committedUsd: n
   return (
     <section aria-label="Market" className="grid grid-cols-2 gap-x-8 gap-y-5 border-y border-line py-4 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1fr]">
       <div className="col-span-2 lg:col-span-1">
-        <Stat label="UST price" value={price(point.ustPrice)} note="Target $1.00" alert={point.ustPrice < OFF_PEG} large />
+        <Stat label="UST price" value={price(point.ustPrice)} note="Should stay at $1.00" alert={point.ustPrice < OFF_PEG} large />
       </div>
-      <Stat label="LUNA price" value={price(point.lunaPrice)} note={`Worth ${money(point.lunaMarketCap)} in all`} />
-      <Stat label="LUNA supply" value={supply(point.lunaSupply)} note="Coins in circulation" />
-      <Stat label="Bitcoin reserve" value={money(point.reserveUsd)} note={committedUsd > 0 ? `${money(committedUsd)} committed today` : "Emergency fund"} />
+      <Stat label="LUNA price" value={price(point.lunaPrice)} note={`All of it is worth ${money(point.lunaMarketCap)}`} />
+      <Stat label="LUNA supply" value={supply(point.lunaSupply)} note="Coins printed so far" />
+      <Stat label="Bitcoin reserve" value={money(point.reserveUsd)} note={committedUsd > 0 ? `${money(committedUsd)} committed today` : "Your emergency fund"} />
       <PanicMeter panic={point.panic} />
     </section>
   );
@@ -49,15 +50,13 @@ export function CoverLine({ point }: { point: Point }) {
   return (
     <section aria-label="LUNA cover" className="pt-4">
       <p className="text-fg-2">
-        All the LUNA is worth <span className={`font-[510] tabular-nums ${lost ? "text-signal" : "text-fg"}`}>{percent(cover)}</span> of all the UST
+        LUNA can back <span className={`font-[510] tabular-nums ${lost ? "text-signal" : "text-fg"}`}>{percent(cover)}</span> of all the UST
       </p>
       <div role="meter" aria-label="LUNA cover" aria-valuemin={0} aria-valuemax={150} aria-valuenow={Math.round(Math.min(cover, COVER_SCALE) * 100)} className="relative mt-3 h-2 rounded-full bg-line">
         <div className={`h-full rounded-full ${lost ? "bg-signal" : "bg-fg"}`} style={{ width: `${Math.min(cover / COVER_SCALE, 1) * 100}%` }} />
         <i aria-hidden className="absolute -top-1.5 h-5 w-0.5 rounded-full bg-signal" style={{ left: `${(1 / COVER_SCALE) * 100}%` }} />
       </div>
-      <p className="mt-2 text-sm text-fg-3" style={{ paddingLeft: `calc(${(1 / COVER_SCALE) * 100}% - 5.5rem)` }}>
-        Under 100%, this game ends
-      </p>
+      <p className="mt-2 text-sm text-fg-3 text-pretty">Under the orange mark, there is not enough LUNA to back every UST, and this game ends.</p>
     </section>
   );
 }

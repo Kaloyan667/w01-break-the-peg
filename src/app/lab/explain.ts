@@ -21,9 +21,9 @@ export function explainDay({ spentUsd, burnedUst }: DayResult, open: Point, clos
 
   if (burnedUst > 0) {
     parts.push(
-      `UST was cheap, so traders swapped it for newly printed LUNA and sold that LUNA. Its supply ${growth(open.lunaSupply, close.lunaSupply)} and its price fell ${percent(1 - close.lunaPrice / open.lunaPrice)}.`,
+      `UST got cheap, so traders swapped it for freshly printed LUNA and sold it right away. The amount of LUNA ${growth(open.lunaSupply, close.lunaSupply)} and its price fell ${percent(1 - close.lunaPrice / open.lunaPrice)}.`,
     );
-    parts.push(`All the LUNA now covers ${percent(close.lunaMarketCap / close.ustSupply)} of all the UST.`);
+    parts.push(`LUNA can now back ${percent(close.lunaMarketCap / close.ustSupply)} of all the UST.`);
   } else if (close.unsoldUst > NOTABLE_QUEUE) {
     parts.push(`${money(close.unsoldUst)} of UST is looking for a buyer, but the price barely moved, so nobody has a reason to swap it for LUNA yet.`);
   } else if (spentUsd === 0) {

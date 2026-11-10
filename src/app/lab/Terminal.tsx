@@ -10,13 +10,13 @@ const RAISED_FEE = 0.03;
 
 function Bottleneck({ queueUst, limitUsd, fee }: { queueUst: number; limitUsd: number; fee: number }) {
   if (queueUst < 1e6) {
-    return <p className="mt-4 text-sm text-fg-2">No UST is waiting to be sold. At its normal fee, the chain absorbs {money(limitUsd)} a day.</p>;
+    return <p className="mt-4 text-sm text-fg-2">No UST is up for sale. At its normal fee, the system can take in {money(limitUsd)} a day.</p>;
   }
   const share = Math.min(limitUsd / queueUst, 1);
   return (
     <div className="mt-4">
       <p className="text-sm text-fg-2">
-        {money(queueUst)} of UST is waiting to be sold. At its normal fee, the chain absorbs {money(limitUsd)} a day.
+        {money(queueUst)} of UST is up for sale. At its normal fee, the system can only take in {money(limitUsd)} a day.
         {fee > RAISED_FEE && <span className="text-signal"> The fee has climbed to {percent(fee)}.</span>}
       </p>
       <div aria-hidden className="mt-2 h-1.5 rounded-full bg-signal">
@@ -38,7 +38,7 @@ export function Story({ day, point, limitUsd, explanation }: { day: number; poin
           <p className="mt-1 text-pretty">{explanation}</p>
         </>
       )}
-      <p className="mt-3 text-sm text-fg-3">That day in 2022</p>
+      <p className="mt-3 text-sm text-fg-3">What really happened that day in 2022</p>
       <p className="mt-1 font-[510] tracking-[-0.011em] text-pretty">
         {event.text}{" "}
         <a href={event.source.url} target="_blank" rel="noreferrer" className="text-sm font-normal text-fg-3 underline underline-offset-2 hover:text-fg-2">

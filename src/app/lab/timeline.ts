@@ -6,9 +6,9 @@ const HARVARD = { label: "Harvard", url: "https://corpgov.law.harvard.edu/2023/0
 const DEFILLAMA = { label: "DefiLlama", url: "https://coins.llama.fi/chart/coingecko:terrausd" };
 
 export const TIMELINE: HistoricalEvent[] = [
-  { text: "Two addresses pull 375 million UST out of Anchor, the app paying 19.5% on deposits.", source: HARVARD },
+  { text: "Two wallets pull 375 million UST out of Anchor, a savings app paying 19.5% interest.", source: HARVARD },
   {
-    text: "The Luna Foundation Guard starts selling bitcoin to defend the peg. By May 12 it will have spent $2.8 billion.",
+    text: "The Luna Foundation Guard, which holds the reserve, starts spending bitcoin to hold UST at $1. By May 12 it will have spent $2.8 billion.",
     source: { label: "The Block", url: "https://www.theblock.co/amp/post/187488/luna-foundation-guard-says-it-spent-2-8-billion-to-defend-ust-peg" },
   },
   {
@@ -17,12 +17,12 @@ export const TIMELINE: HistoricalEvent[] = [
   },
   { text: "UST opens at 89 cents. LUNA opens at $41, about half its price three days ago.", source: DEFILLAMA },
   {
-    text: "An emergency proposal would lift the daily limit on turning UST into LUNA from $293 million to $1.2 billion.",
+    text: "An emergency proposal would raise the daily limit on swapping UST for LUNA from $293 million to $1.2 billion.",
     source: { label: "CoinGecko", url: "https://www.coingecko.com/learn/ust-depegged-terra-s-biggest-test" },
   },
   { text: "LUNA opens at $1.12. UST opens at 75 cents.", source: DEFILLAMA },
   {
-    text: "The Terra chain is halted. No more UST can be turned into LUNA.",
+    text: "The Terra blockchain is shut down. No more UST can be swapped for LUNA.",
     source: { label: "Wikipedia", url: "https://en.wikipedia.org/wiki/Terra_(blockchain)" },
   },
 ];

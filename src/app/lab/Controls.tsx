@@ -52,7 +52,7 @@ export function Controls({ game, moving, play }: { game: Game; moving: boolean; 
           plan.defendUsd > 0
             ? `${money(plan.defendUsd)} committed today, spent only if UST falls under ${TRIGGER_CENTS} cents.`
             : canDefend
-              ? `Buy UST to hold the price. Each press adds ${money(DEFEND_STEP_USD)} for today.`
+              ? `Spend bitcoin buying UST to hold up its price. Each press: ${money(DEFEND_STEP_USD)}.`
               : "The reserve is empty."
         }
         on={plan.defendUsd > 0}
@@ -62,7 +62,7 @@ export function Controls({ game, moving, play }: { game: Game; moving: boolean; 
       />
       <Action
         title="Mint more LUNA"
-        detail={`Raise today's limit from ${money(dailyLimitUsd(false))} to ${money(dailyLimitUsd(true))}. More UST burned, more LUNA printed.`}
+        detail={`Let people swap more UST for new LUNA today: up to ${money(dailyLimitUsd(true))}, not ${money(dailyLimitUsd(false))}. Helps UST, hurts LUNA.`}
         on={plan.mint}
         pressable
         disabled={moving}
@@ -70,7 +70,7 @@ export function Controls({ game, moving, play }: { game: Game; moving: boolean; 
       />
       <Action
         title="Raise yield / bluff"
-        detail={strength > 0 ? `Hold back ${percent(strength)} of Anchor's withdrawals today.` : "Nobody believes you anymore."}
+        detail={strength > 0 ? `Promise savers a better deal, so ${percent(strength)} fewer leave Anchor today.` : "Nobody believes you anymore."}
         note="Effect size is invented, not calibrated on data."
         on={plan.bluff}
         pressable
