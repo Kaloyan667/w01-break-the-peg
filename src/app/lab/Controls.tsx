@@ -6,6 +6,7 @@ import type { Move } from "./useGame";
 function Action({
   title,
   detail,
+  note,
   on,
   pressable,
   disabled,
@@ -13,6 +14,7 @@ function Action({
 }: {
   title: string;
   detail: string;
+  note?: string;
   on: boolean;
   /** A switch for the day, as opposed to a button that can be pressed again and again. */
   pressable: boolean;
@@ -32,6 +34,7 @@ function Action({
         {on && <i aria-hidden className="size-1.5 rounded-full bg-signal" />}
       </span>
       <span className="mt-1 block text-sm text-fg-2 text-pretty">{detail}</span>
+      {note && <span className="mt-1 block text-sm text-fg-3 text-pretty">{note}</span>}
     </button>
   );
 }
@@ -68,6 +71,7 @@ export function Controls({ game, moving, play }: { game: Game; moving: boolean; 
       <Action
         title="Raise yield / bluff"
         detail={strength > 0 ? `Hold back ${percent(strength)} of Anchor's withdrawals today. Works less each time.` : "Nobody believes you anymore."}
+        note="Effect size is invented, not calibrated on data."
         on={plan.bluff}
         pressable
         disabled={moving || strength === 0}

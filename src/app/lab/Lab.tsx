@@ -38,10 +38,11 @@ export function Lab() {
         <CrashCard report={crashReport(game)} modelHours={model.outcome.spiralHour} closest={closest} onRestart={restart} />
       ) : spiralling ? (
         <p role="status" className="mt-4 rounded-[10px] bg-signal p-4 text-center text-lg font-[510] text-pretty text-bg">
-          Death spiral. All the LUNA is worth less than all the UST, and your moves are over.{" "}
+          LUNA no longer covers UST.{" "}
           <Link href="/patterns#ust-2021" className="underline underline-offset-2">
-            In May 2021, UST came back from this line.
-          </Link>
+            In May 2021 it came back from here.
+          </Link>{" "}
+          In May 2022 it didn&apos;t.
         </p>
       ) : (
         <Controls game={game} moving={moving} play={play} />
