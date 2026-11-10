@@ -9,7 +9,8 @@
     "test": "vitest run",
     "odds": "vite-node scripts/build-rescue-odds.ts",
     "crises": "vite-node scripts/build-crises.ts",
-    "cover": "vite-node scripts/cover-replay.ts"
+    "cover": "vite-node scripts/cover-replay.ts",
+    "answer": "vite-node scripts/sync-answer.ts"
   },
   "dependencies": {
     "next": "16.4.3",
